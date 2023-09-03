@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  nodesrv:
+    build: 
+      context: ./node
+    container_name: appnode
+    tty: true
+
+  nginx:
+    restart: always
+    build: 
+      context: ./nginx
+    container_name: nginx
+    ports:
+      - "8080:80"
