@@ -1,16 +1,33 @@
-version: '3'
+version: '3.8'
 
 services:
   nodesrv:
     build: 
       context: ./node
     container_name: appnode
+    healthcheck:
+        test: wget --quiet --tries=1 --spider http://127.0.0.1:3000 || exit 1
+        timeout: 20s
+        retries: 10    
+    restart: unless-stopped
     tty: true
+    networks:
+      - desafio-node-net
 
   nginx:
-    restart: always
     build: 
       context: ./nginx
     container_name: nginx
+    tty: true
+    restart: unless-stopped
+    depends_on:
+      nodesrv:
+        condition: service_healthy
     ports:
       - "8080:80"
+    networks:
+      - desafio-node-net      
+
+networks:
+  desafio-node-net:
+    driver: bridge
