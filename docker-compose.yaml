@@ -1,15 +1,31 @@
-version: '3.8'
+version: '3'
 
 services:
-  nodesrv:
+
+  db:
+    image: mysql:5.7
+    command: --innodb-use-native-aio=0 --default-authentication-plugin=mysql_native_password
+    container_name: db
+    restart: always
+    tty: true
+    environment:
+      - MYSQL_DATABASE=nodedb
+      - MYSQL_ROOT_PASSWORD=root
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 10
+    networks:
+      - desafio-node-net
+
+  appnode:
     build: 
       context: ./node
     container_name: appnode
-    healthcheck:
-        test: wget --quiet --tries=1 --spider http://127.0.0.1:3000 || exit 1
-        timeout: 20s
-        retries: 10    
-    restart: unless-stopped
+    depends_on:
+      - db
+    entrypoint: dockerize -wait tcp://db:3306 --timeout 10s docker-entrypoint.sh  
+    restart: always
     tty: true
     networks:
       - desafio-node-net
@@ -19,14 +35,13 @@ services:
       context: ./nginx
     container_name: nginx
     tty: true
-    restart: unless-stopped
+    restart: always
     depends_on:
-      nodesrv:
-        condition: service_healthy
+      - appnode
     ports:
       - "8080:80"
     networks:
-      - desafio-node-net      
+      - desafio-node-net
 
 networks:
   desafio-node-net:
