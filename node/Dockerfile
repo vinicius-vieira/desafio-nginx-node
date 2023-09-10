@@ -13,6 +13,8 @@ COPY . .
 
 RUN npm install mysql --save
 
+RUN npm install express-async-handler --save
+
 RUN npm install
 
 EXPOSE 3000

@@ -12,36 +12,49 @@ const config = {
 const mysql = require('mysql')
 const connection = mysql.createConnection(config)
 
-const createTale = `CREATE TABLE people(id int not null auto_increment, name varchar(256),  primary key(id) )`;
+const createTale = `CREATE TABLE IF NOT EXISTS people(id int not null auto_increment, name varchar(256),  primary key(id) )`;
 connection.query(createTale);
 
-const query = `INSERT INTO people(name) VALUES('Vinicius')`;
+const query = `INSERT IGNORE INTO people(name) VALUES('Vinicius')`;
 connection.query(query);
 connection.end();
 
-app.get('/', (req,res) =>{
+app.get('/', async (req,res) =>{
+   
+    async function runAsync (res) {
+        await new Promise(function(resolve, reject) {
+        let con = mysql.createConnection(config);
+        con.query( `SELECT name FROM people`, (err, result, fields) => {
 
-    let body = '<h1>Full Cycle!!</h1>';
-    body += '<h3>Lista de pessoas</h3>';
-    body += '<ul>';
+            let body = '<h1>Full Cycle!!</h1>';
+            body += '<h3>Lista de pessoas</h3>';
+            body += '<ul>';
 
-    let con = mysql.createConnection(config);
+            if (err) {
+                 body += `<span style='color: red'> Falha na conexão com o BD. </span>`;
+                 body += "</ul>"
+                 throw err;
+            }
 
-    con.query( `SELECT name FROM people`, (err, result, fields) => {
-                if (err) throw err;
-
-                result.forEach(people => {
-                    body += '<li>';
-                    body += people.name;
-                    body += '</li>';
-                });
+            result.forEach(people => {
+                body += '<li>';
+                body += people.name;
+                body += '</li>';
             });
-    
-    con.end();
 
-    body += '</ul>';
+            
+            body += '</ul>';
 
-    res.send( body );
+            res.send( body );
+
+            });
+
+
+            con.end();
+        });
+    }
+
+    runAsync(res);
 })
 
 app.listen(port,() =>{
